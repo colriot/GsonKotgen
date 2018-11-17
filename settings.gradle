@@ -2,3 +2,4 @@ rootProject.name = 'gsonkot'
 
 include ':gsonkot-api'
 include ':gsonkot-processor'
+include ':gsonkot-sample'
