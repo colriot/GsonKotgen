@@ -21,7 +21,8 @@ internal object Generator {
 
   internal data class Parameter(
     val name: String,
-    val fqClassName: String
+    val fqClassName: String,
+    val isNullable: Boolean = false
   )
 
   fun generate(input: GlassInput) = run {
@@ -86,7 +87,7 @@ internal object Generator {
   private fun adaptersDeclaration(parameters: List<Parameter>): String {
     return parameters.joinToString(separator = "\n") {
       """
-      |  private val ${it.name}Adapter = gson.getAdapter(${it.fqClassName}::class.java)
+      |  private val ${it.name}Adapter = gson.getAdapter(${it.fqClassName}::class.java)${if (it.isNullable) ".nullSafe()" else ""}
       """.trimMargin()
     }
   }
@@ -112,7 +113,7 @@ internal object Generator {
     val sections = parameters.joinToString(separator = "\n") {
       """
       |        "${it.name}" -> {
-      |          ${it.name} = ${it.name}Adapter.read(jsonReader)
+      |          ${it.name} = ${it.name}Adapter.read(jsonReader)${if (!it.isNullable) " ?: throw NullPointerException(\"Non-null parameter '${it.name}' was null.\")" else ""}
       |        }
       """.trimMargin()
     }
@@ -131,7 +132,7 @@ internal object Generator {
 
   private fun constructorArgs(parameters: List<Parameter>): String =
     parameters.joinToString(",\n      ") {
-      "${it.name} = ${it.name}" + " ?: throw NullPointerException(\"Parameter ${it.name} was missing.\")"
+      "${it.name} = ${it.name}" + if (!it.isNullable) " ?: throw NullPointerException(\"Non-null parameter '${it.name}' was missing.\")" else ""
     }
 
   private fun typeArguments(typeArgumentList: List<TypeParameter>) =

@@ -5,6 +5,7 @@ import kotlinx.metadata.Flags
 import kotlinx.metadata.KmTypeVisitor
 import kotlinx.metadata.KmVariance
 import xyz.ryabov.gsonkot.codegen.metadata.fqName
+import xyz.ryabov.gsonkot.codegen.metadata.isNullableType
 
 class KmTypeInfoVisitor(
   private val flags: Flags,
@@ -12,6 +13,8 @@ class KmTypeInfoVisitor(
   private val onVisitEnd: (KmTypeInfoVisitor) -> Unit
 ) : KmTypeVisitor() {
   lateinit var fqName: String
+    private set
+  var isNullable: Boolean = false
     private set
 
   private val typeArgs = arrayListOf<String>()
@@ -52,6 +55,8 @@ class KmTypeInfoVisitor(
       fqName += typeArgs.joinToString(prefix = "<", postfix = ">")
       typeArgs.clear()
     }
+
+    isNullable = flags.isNullableType
 
     onVisitEnd(this)
   }

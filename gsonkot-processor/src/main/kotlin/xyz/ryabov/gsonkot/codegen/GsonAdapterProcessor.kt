@@ -92,7 +92,7 @@ class GsonAdapterProcessor : AbstractProcessor() {
             return object : KmValueParameterVisitor() {
               override fun visitType(flags: Flags): KmTypeVisitor? {
                 return KmTypeInfoVisitor(flags, typeArgsRegistry::get) {
-                  parameters += Parameter(name, it.fqName)
+                  parameters += Parameter(name, it.fqName, it.isNullable)
                 }
               }
             }
