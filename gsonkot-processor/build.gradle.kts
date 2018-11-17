@@ -4,7 +4,7 @@ plugins {
 }
 
 dependencies {
-  compile(kotlin("stdlib"))
+  compile(kotlin("stdlib-jdk8"))
   compile("org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.0.4")
 
   compileOnly("com.google.auto.service:auto-service:1.0-rc4")

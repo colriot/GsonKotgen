@@ -1,3 +1,3 @@
 plugins { kotlin("jvm") }
 
-dependencies { compile(kotlin("runtime")) }
+dependencies { compile(kotlin("stdlib")) }

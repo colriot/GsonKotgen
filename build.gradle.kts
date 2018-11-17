@@ -1,8 +1,8 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  kotlin("jvm") version "1.2.61" apply false
-  kotlin("kapt") version "1.2.61" apply false
+  kotlin("jvm") version "1.3.10" apply false
+  kotlin("kapt") version "1.3.10" apply false
 }
 
 subprojects {

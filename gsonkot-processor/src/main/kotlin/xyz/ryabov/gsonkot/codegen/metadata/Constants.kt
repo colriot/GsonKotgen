@@ -11,10 +11,9 @@ import javax.lang.model.element.Element
 const val kaptGeneratedOption = "kapt.kotlin.generated"
 
 
-@Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
 val Element.kotlinMetadata: KotlinClassMetadata?
   get() = KotlinClassMetadata.read(getAnnotation(Metadata::class.java).run {
-    KotlinClassHeader(k, mv, bv, d1, d2, xs, pn, xi)
+    KotlinClassHeader(kind, metadataVersion, bytecodeVersion, data1, data2, extraString, packageName, extraInt)
   })
 
 fun ClassName.fqName() = this.replace('/', '.')
