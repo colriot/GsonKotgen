@@ -146,7 +146,7 @@ class GsonAdapterProcessor : AbstractProcessor() {
       return false
     }
     val dirPath = pkg.replace('.', File.separatorChar)
-    val filePath = "GsonKotAdapter_${fqClassName.substringAfter(pkg).replace('.', '_')}.kt"
+    val filePath = "$adapterClassName.kt"
     val dir = File(generatedDir, dirPath).also { it.mkdirs() }
     val file = File(dir, filePath)
     file.writeText(generate())

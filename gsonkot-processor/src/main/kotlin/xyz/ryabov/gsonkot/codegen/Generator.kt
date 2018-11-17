@@ -9,6 +9,7 @@ internal object Generator {
     val typeArgumentList: List<TypeParameter>,
     val parameterList: List<Parameter>
   ) {
+    val adapterClassName get() = "${className}_GsonAdapter"
 
     fun generate() = Generator.generate(this)
   }
@@ -25,7 +26,7 @@ internal object Generator {
 
   fun generate(input: GlassInput) = run {
     val (className, fqClassName, pkg, typeArgumentList, parameterList) = input
-    val main = main(className, fqClassName, typeArgumentList, parameterList)
+    val main = main(input.adapterClassName, className, fqClassName, typeArgumentList, parameterList)
 
     """
         |package $pkg
@@ -41,18 +42,21 @@ internal object Generator {
   }
 
   private fun main(
+    adapterClassName: String,
     className: String,
     fqClassName: String,
     typeArgumentList: List<TypeParameter>,
     parameters: List<Parameter>
   ) = run {
-    val typeArguments = typeArguments(typeArgumentList)
-    val functionArgs = parameters.joinToString { (name, className) -> "$name: $className = this.$name" }
-    val copyArgs = parameters.joinToString { (name) -> "$name = _$name" }
+    val adaptersDeclaration = adaptersDeclaration(parameters)
+    val tempVarsDeclaration = tempVarsDeclaration(parameters)
+    val writeFieldsBlock = writeFieldsBlock(parameters)
+    val readFieldBlock = readFieldsBlock(parameters)
+    val constructorArgs = constructorArgs(parameters)
 
     """
-        |class ${className}__GsonAdapter(gson: Gson) : TypeAdapter<$fqClassName>() {
-        |${adapterSection(parameters)}
+        |class $adapterClassName(gson: Gson) : TypeAdapter<$fqClassName>() {
+        |$adaptersDeclaration
         |
         |  override fun write(jsonWriter: JsonWriter, value: $fqClassName?) {
         |    if (value == null) {
@@ -60,37 +64,57 @@ internal object Generator {
         |    }
         |
         |    jsonWriter.beginObject()
-        |${write(parameters)}
+        |$writeFieldsBlock
         |    jsonWriter.endObject()
         |  }
         |
         |  override fun read(jsonReader: JsonReader): $fqClassName? {
-        |${tempVarsDeclaration(parameters)}
+        |$tempVarsDeclaration
         |
         |    jsonReader.beginObject()
-        |${read(parameters)}
+        |$readFieldBlock
         |    jsonReader.endObject()
         |
         |    return $fqClassName(
-        |      ${constructorArgs(parameters)}
+        |      $constructorArgs
         |    )
         |  }
         |}
-        |""".trimMargin()
+        """.trimMargin()
   }
 
-  private fun constructorArgs(parameters: List<Parameter>): String =
-    parameters.joinToString(",\n      ") {
-      "${it.name} = ${it.name}" + " ?: throw NullPointerException(\"Parameter ${it.name} was missing.\")"
+  private fun adaptersDeclaration(parameters: List<Parameter>): String {
+    return parameters.joinToString(separator = "\n") {
+      """
+      |  private val ${it.name}Adapter = gson.getAdapter(${it.fqClassName}::class.java)
+      """.trimMargin()
     }
+  }
 
-  private fun read(parameters: List<Parameter>): String {
+  private fun tempVarsDeclaration(parameters: List<Parameter>): String {
+    return parameters.joinToString(separator = "\n") {
+      """
+      |    var ${it.name}: ${it.fqClassName}? = null
+      """.trimMargin()
+    }
+  }
+
+  private fun writeFieldsBlock(parameters: List<Parameter>): String {
+    return parameters.joinToString(separator = "\n") {
+      """
+      |    jsonWriter.name("${it.name}")
+      |    ${it.name}Adapter.write(jsonWriter, value.${it.name})
+      """.trimMargin()
+    }
+  }
+
+  private fun readFieldsBlock(parameters: List<Parameter>): String {
     val sections = parameters.joinToString(separator = "\n") {
       """
       |        "${it.name}" -> {
       |          ${it.name} = ${it.name}Adapter.read(jsonReader)
       |        }
-      |""".trimMargin()
+      """.trimMargin()
     }
 
     return """
@@ -102,33 +126,13 @@ internal object Generator {
     |        }
     |      }
     |    }
-    |""".trimMargin()
+    """.trimMargin()
   }
 
-  private fun tempVarsDeclaration(parameters: List<Parameter>): String {
-    return parameters.joinToString(separator = "\n") {
-      """
-      |    var ${it.name}: ${it.fqClassName}? = null
-      |""".trimMargin()
+  private fun constructorArgs(parameters: List<Parameter>): String =
+    parameters.joinToString(",\n      ") {
+      "${it.name} = ${it.name}" + " ?: throw NullPointerException(\"Parameter ${it.name} was missing.\")"
     }
-  }
-
-  private fun adapterSection(parameters: List<Parameter>): String {
-    return parameters.joinToString(separator = "\n") {
-      """
-      |  private val ${it.name}Adapter = gson.getAdapter(${it.fqClassName}::class.java)
-      |""".trimMargin()
-    }
-  }
-
-  private fun write(parameters: List<Parameter>): String {
-    return parameters.joinToString(separator = "\n") {
-      """
-      |    jsonWriter.name("${it.name}")
-      |    ${it.name}Adapter.write(jsonWriter, value.${it.name})
-      |""".trimMargin()
-    }
-  }
 
   private fun typeArguments(typeArgumentList: List<TypeParameter>) =
     typeArgumentList
