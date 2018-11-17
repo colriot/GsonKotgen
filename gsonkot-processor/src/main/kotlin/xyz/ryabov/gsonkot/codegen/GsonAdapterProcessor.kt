@@ -44,6 +44,8 @@ class GsonAdapterProcessor : AbstractProcessor() {
   private val typeUtils: Types get() = processingEnv.typeUtils
   private val generatedDir: File? get() = options[kaptGeneratedOption]?.let(::File)
 
+  override fun getSupportedOptions(): Set<String> = setOf(kaptGeneratedOption)
+
   override fun getSupportedAnnotationTypes(): Set<String> = setOf(annotationName)
 
   override fun getSupportedSourceVersion(): SourceVersion = SourceVersion.latest()
