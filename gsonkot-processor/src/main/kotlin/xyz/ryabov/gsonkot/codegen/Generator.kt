@@ -81,7 +81,7 @@ internal object Generator {
 
   private fun constructorArgs(parameters: List<Parameter>): String =
     parameters.joinToString(",\n      ") {
-      "${it.name} = ${it.name}"
+      "${it.name} = ${it.name}" + " ?: throw NullPointerException(\"Parameter ${it.name} was missing.\")"
     }
 
   private fun read(parameters: List<Parameter>): String {
